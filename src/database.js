@@ -8,7 +8,7 @@ const connectToDatabase = async () => {
     const client = new MongoClient(process.env.DB_URI);
 
     await client.connect();
-    db = client.db(); // Use the database specified in the URI
+    db = client.db(process.env.DB_NAME);
     return db;
 };
 

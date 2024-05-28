@@ -18,7 +18,9 @@ connectToDatabase().then(db => {
 });
 
 // Routes
-const indexRouter = require('./routes/index');
-app.use('/api', indexRouter);
+const userRouter = require('./routes/userRoutes');
+const listingRouter = require('./routes/listingRoutes');
+app.use('/api/users', userRouter);
+app.use('/api/listings', listingRouter);
 
 module.exports = app;
