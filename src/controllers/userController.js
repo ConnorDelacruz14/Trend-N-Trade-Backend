@@ -1,3 +1,5 @@
+const {ObjectId} = require("mongodb")
+
 exports.getUsers = async (req, res) => {
   try {
     const db = req.app.locals.db;
@@ -8,6 +10,19 @@ exports.getUsers = async (req, res) => {
   }
 };
 
+exports.getUser = async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    const user = await db.collection('user').findOne({ _id: new ObjectId(req.query._id) });
+    if (user) {
+      res.json(user);
+    } else {
+      res.status(404).json({ error: 'User not found' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
 exports.createUser = async (req, res) => {
   try {
     const db = req.app.locals.db;

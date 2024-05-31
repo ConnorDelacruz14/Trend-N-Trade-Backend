@@ -1,10 +1,13 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const { connectToDatabase } = require('./database');
+const cors = require('cors')
 
 dotenv.config();
 
 const app = express();
+// CORS
+app.use(cors())
 
 // Middleware
 app.use(express.json());
@@ -20,7 +23,8 @@ connectToDatabase().then(db => {
 // Routes
 const userRouter = require('./routes/userRoutes');
 const listingRouter = require('./routes/listingRoutes');
-app.use('/api/users', userRouter);
-app.use('/api/listings', listingRouter);
+
+app.use('/api/user', userRouter);
+app.use('/api/listing', listingRouter);
 
 module.exports = app;
