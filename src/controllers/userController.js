@@ -99,3 +99,56 @@ exports.loginUser = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+
+exports.retrievePurchases = async (req, res) => {
+  try {
+    const token = req.headers.authorization.split(' ')[1];
+    //console.log(token);
+
+    if (!token) {
+      console.log("no token");
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+
+    let decodedToken;
+    try {
+      decodedToken = jwt.verify(token, JWT_SECRET);
+      console.log('token success');
+    } catch (err) {
+      console.log('invalid token');
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+
+    const userId = decodedToken.userId;
+    console.log(userId);
+    const db = req.app.locals.db;
+    const user = await db.collection('user').findOne({ _id: new ObjectId(userId) });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const purchases = user.purchases || [];
+    if (purchases.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    const listings = await db.collection('listing').find({ _id: { $in: purchases.map(id => new ObjectId(id)) } }).toArray();
+
+    const purchaseDetails = listings.map(listing => ({
+      image: listing.images[0],
+      name: listing.name,
+      listingPrice: listing.listingPrice,
+      purchaseStatus: listing.purchaseStatus
+    }));
+
+    console.log(purchaseDetails);
+
+    res.status(200).json(purchaseDetails);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

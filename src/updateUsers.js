@@ -17,21 +17,22 @@ async function updateUsers() {
         console.log('Connected to MongoDB');
     
 
-        const userCollection = db.collection('user');
+        const userCollection = db.collection('listing');
 
-        const userId = new ObjectId('6655321a766861e645bcfd39');
+        /*const userId = new ObjectId('6655321a766861e645bcfd39');
         const userExists = await userCollection.findOne({ _id: userId });
         if (!userExists) {
             console.log(`No user found with _id: ${userId}`);
             return;
-        }
+        }*/
 
         // Update all users to include an array of ObjectId
-        const result = await userCollection.updateOne(
-            { _id: userId },
+        const result = await userCollection.updateMany(
+            {},
             {
+                
                 $set: {
-                    purchases: [new ObjectId('6655328b0909acf1e4643508'), new ObjectId('665535050909acf1e464350d')] // Example array of ObjectId
+                    purchaseStatus: "notPurchased" // Example array of ObjectId
                 }
             }
         );
