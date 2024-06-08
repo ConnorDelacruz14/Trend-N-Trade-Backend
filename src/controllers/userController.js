@@ -17,6 +17,7 @@ exports.getUsers = async (req, res) => {
 exports.getUser = async (req, res) => {
   try {
     const db = req.app.locals.db;
+    
     const user = await db.collection('user').findOne({ _id: new ObjectId(req.query._id) });
     if (user) {
       res.json(user);
@@ -150,5 +151,91 @@ exports.retrievePurchases = async (req, res) => {
     res.status(200).json(purchaseDetails);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getLoggedInUser = async (req, res) => {
+  try {
+
+    const token = req.headers.authorization.split(' ')[1];
+    //console.log(token);
+
+    if (!token) {
+      console.log("no token");
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+
+    let decodedToken;
+    try {
+      decodedToken = jwt.verify(token, JWT_SECRET);
+      console.log('token success');
+    } catch (err) {
+      console.log('invalid token');
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+
+    const userId = decodedToken.userId;
+    console.log(userId);
+    const db = req.app.locals.db;
+    const user = await db.collection('user').findOne({ _id: new ObjectId(userId) });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (user) {
+      res.json(user);
+    } else {
+      res.status(404).json({ error: 'User not found' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
+exports.updateUserProfile = async (req, res) => {
+  const { username, description, tags, instagram, twitter, facebook } = req.body;
+
+  try {
+    // Find the user by their username or ID (assuming you use a token and extract the user ID)
+    const token = req.headers.authorization.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    let decodedToken;
+    try {
+      decodedToken = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const userId = decodedToken.userId;
+    const db = req.app.locals.db;
+
+    // Prepare update object with only the fields that are provided in the request body
+    const updateFields = {};
+    if (username) updateFields.username = username;
+    if (description) updateFields.description = description;
+    if (tags) updateFields.tags = tags;
+    if (instagram) updateFields.instagram = instagram;
+    if (twitter) updateFields.twitter = twitter;
+    if (facebook) updateFields.facebook = facebook;
+
+    // Use findOneAndUpdate to update the user
+    const updatedUser = await db.collection('user').findOneAndUpdate(
+      { _id: new ObjectId(userId) }, // Filter: find user by ID
+      { $set: updateFields }, // Update: set the fields specified in updateFields
+      { returnOriginal: false } // Options: return the updated document
+    );
+
+
+    res.status(200).json({ message: 'Profile updated successfully', user: updatedUser.value });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
