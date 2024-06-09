@@ -25,3 +25,29 @@ exports.createListing = async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 };
+
+exports.updateListingStatus = async (req, res) => {
+  const { id, purchaseStatus } = req.body;
+
+  const updateFields = {};
+    if (purchaseStatus) updateFields.purchaseStatus = purchaseStatus;
+
+
+  try {
+
+    
+    const db = req.app.locals.db;
+    const updatedListing = await db.collection('listing').findOneAndUpdate(
+      { _id: new ObjectId(id) }, // Filter: find user by ID
+      { $set: updateFields }, // Update: set the fields specified in updateFields
+      { returnOriginal: false } // Options: return the updated document
+    );
+
+
+    res.status(200).json({ message: 'Listing updated successfully', listing: updatedListing.value });
+
+  } catch (error) {
+    console.error('Error updating listings:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};

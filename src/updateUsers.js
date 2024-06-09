@@ -17,7 +17,7 @@ async function updateUsers() {
         console.log('Connected to MongoDB');
     
 
-        const userCollection = db.collection('listing');
+        const userCollection = db.collection('user');
 
         /*const userId = new ObjectId('6655321a766861e645bcfd39');
         const userExists = await userCollection.findOne({ _id: userId });
@@ -32,7 +32,7 @@ async function updateUsers() {
             {
                 
                 $set: {
-                    purchaseStatus: "notPurchased" // Example array of ObjectId
+                    listings: [] // Example array of ObjectId
                 }
             }
         );
