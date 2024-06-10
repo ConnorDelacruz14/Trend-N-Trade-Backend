@@ -251,7 +251,7 @@ exports.retrieveSales = async (req, res) => {
     //const listings = await db.collection('listing').find({ _id: { $in: purchases.map(id => new ObjectId(id)) } }).toArray();
 
     const purchaseDetails = listings
-    .filter(listing => listing.purchaseStatus !== 'notPurchased')
+    //.filter(listing => listing.purchaseStatus !== 'notPurchased')
     .map(listing => ({
       id: listing._id,
       image: listing.images[0],
