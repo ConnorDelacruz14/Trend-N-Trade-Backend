@@ -54,7 +54,8 @@ exports.createUser = async (req, res) => {
       pfp: '', // Default empty profile picture
       tags: [], // Empty array for tags
       purchases: [], // Empty array for purchases
-      saves: []
+      saves: [],
+      card: []
     };
     
     // Insert the new user into the database
@@ -309,7 +310,53 @@ exports.getLoggedInUser = async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-}
+};
+
+exports.updateCreditInfo = async (req, res) => {
+  const { cardholderName, cardNumber, expirationDate, cvc } = req.body;
+  console.log("card function called");
+  console.log({ cardholderName, cardNumber, expirationDate, cvc });
+
+  try {
+    // Get the token from the authorization header
+    const token = req.headers.authorization.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    // Verify the token
+    let decodedToken;
+    try {
+      decodedToken = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const userId = decodedToken.userId;
+    const db = req.app.locals.db;
+
+    // Prepare the new card information
+    const newCard = [
+      cardholderName,
+      cardNumber,
+      expirationDate,
+      cvc
+    ];
+
+    // Use findOneAndUpdate to add the new card to the user's card array
+    const updatedUser = await db.collection('user').findOneAndUpdate(
+      { _id: new ObjectId(userId) }, // Filter: find user by ID
+      { $push: { card: newCard } }, // Update: add the new card to the card array
+      { returnOriginal: false } // Options: return the updated document
+    );
+
+    res.status(200).json({ message: 'Credit card information updated successfully', user: updatedUser.value });
+  } catch (error) {
+    console.error('Error updating credit card information:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
 
 exports.updateUserProfile = async (req, res) => {
   const { username, description, tags, instagram, twitter, facebook } = req.body;
@@ -352,6 +399,87 @@ exports.updateUserProfile = async (req, res) => {
     res.status(200).json({ message: 'Profile updated successfully', user: updatedUser.value });
   } catch (error) {
     console.error('Error updating profile:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
+exports.getCardInfo = async (req, res) => {
+  try {
+    // Get the token from the authorization header
+    const token = req.headers.authorization.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    // Verify the token
+    let decodedToken;
+    try {
+      decodedToken = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const userId = decodedToken.userId;
+    const db = req.app.locals.db;
+
+    // Find the user by their ID
+    const user = await db.collection('user').findOne(
+      { _id: new ObjectId(userId) }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Return the user's card information
+    res.status(200).json({ message: 'Card information retrieved successfully', cards: user.card });
+  } catch (error) {
+    console.error('Error retrieving card information:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.removeCardInfo = async (req, res) => {
+  try {
+    // Get the token from the authorization header
+    const token = req.headers.authorization.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    // Verify the token
+    let decodedToken;
+    try {
+      decodedToken = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const userId = decodedToken.userId;
+    const db = req.app.locals.db;
+
+    // Get the card index from the request body
+    const { cardIndex } = req.body;
+
+    // Update the user's document by removing the card at the specified index
+    const user = await db.collection('user').findOneAndUpdate(
+      { _id: new ObjectId(userId) },
+      { $unset: { [`card.${cardIndex}`]: 1 } },
+      { returnOriginal: false }
+    );
+
+    // Remove any null values from the array after unsetting the specific card
+    await db.collection('user').updateOne(
+      { _id: new ObjectId(userId) },
+      { $pull: { card: null } }
+    );
+
+    res.status(200).json({ message: 'Card information removed successfully', cards: user.card });
+  } catch (error) {
+    console.error('Error removing card information:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

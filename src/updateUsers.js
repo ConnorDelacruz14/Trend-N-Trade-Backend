@@ -28,25 +28,25 @@ async function updateUsers() {
 
         // Delete users
 
-        const result = await userCollection.updateMany(
-            {},
-            {
-                $unset: {
-                    listings: "" // Unset the 'saves' field
-                }
-            }
-        );
-
-        // Update all users to include an array of ObjectId
         // const result = await userCollection.updateMany(
         //     {},
         //     {
-                
-        //         $set: {
-        //             saves: [] // Example array of ObjectId
+        //         $unset: {
+        //             listings: "" // Unset the 'saves' field
         //         }
         //     }
         // );
+
+        //Update all users to include an array of ObjectId
+        const result = await userCollection.updateMany(
+            {},
+            {
+                
+                $set: {
+                    card: [] // Example array of ObjectId
+                }
+            }
+        );
 
         console.log(`Matched ${result.matchedCount} documents and modified ${result.modifiedCount} documents.`);
     } catch (err) {
