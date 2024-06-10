@@ -17,7 +17,7 @@ async function updateUsers() {
         console.log('Connected to MongoDB');
     
 
-        const userCollection = db.collection('listing');
+        const userCollection = db.collection('user');
 
         /*const userId = new ObjectId('6655321a766861e645bcfd39');
         const userExists = await userCollection.findOne({ _id: userId });
@@ -26,16 +26,27 @@ async function updateUsers() {
             return;
         }*/
 
-        // Update all users to include an array of ObjectId
+        // Delete users
+
         const result = await userCollection.updateMany(
             {},
             {
-                
-                $set: {
-                    purchaseStatus: "notPurchased" // Example array of ObjectId
+                $unset: {
+                    listings: "" // Unset the 'saves' field
                 }
             }
         );
+
+        // Update all users to include an array of ObjectId
+        // const result = await userCollection.updateMany(
+        //     {},
+        //     {
+                
+        //         $set: {
+        //             saves: [] // Example array of ObjectId
+        //         }
+        //     }
+        // );
 
         console.log(`Matched ${result.matchedCount} documents and modified ${result.modifiedCount} documents.`);
     } catch (err) {
