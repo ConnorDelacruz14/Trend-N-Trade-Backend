@@ -16,11 +16,10 @@ exports.createListing = async (req, res) => {
     const db = req.app.locals.db;
     const newListing = req.body;
     
-    newListing._id = new ObjectId(); // Generate a unique ID for the new listing
-    console.log(newListing)
+    newListing._id = new ObjectId();
 
-    const result = await db.collection('listing').insertOne(newListing);
-    res.status(201).json(result.ops[0]);
+    await db.collection('listing').insertOne(newListing);
+    res.status(201).json({newListing, ok: true});
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

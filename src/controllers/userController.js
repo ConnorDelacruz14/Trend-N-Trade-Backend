@@ -31,9 +31,16 @@ exports.getUser = async (req, res) => {
 
 exports.createUser = async (req, res) => {
   //console.log('called');
+
   try {
     const db = req.app.locals.db;
     const { firstName, lastName, email, username, password } = req.body;
+
+    // Check if user email already exists
+    const user = await db.collection('user').findOne({ email: email });
+    if (user) {
+      return res.status(401).json({ error: 'User already exists' });
+    }
     
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -58,7 +65,6 @@ exports.createUser = async (req, res) => {
     
     // Insert the new user into the database
     const result = await db.collection('user').insertOne(newUser);
-    
     // Respond with the created user object
     res.status(201).json(result.ops[0]);
   } catch (err) {
