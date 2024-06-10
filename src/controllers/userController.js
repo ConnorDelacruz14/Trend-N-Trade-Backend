@@ -53,7 +53,9 @@ exports.createUser = async (req, res) => {
       facebook: '',
       pfp: '', // Default empty profile picture
       tags: [], // Empty array for tags
-      purchases: [] // Empty array for purchases
+      purchases: [], // Empty array for purchases
+      listings: [],
+      saves: []
     };
     
     // Insert the new user into the database
@@ -156,6 +158,59 @@ exports.retrievePurchases = async (req, res) => {
   }
 };
 
+exports.retrieveSaves = async (req, res) => {
+  try {
+    const token = req.headers.authorization.split(' ')[1];
+    //console.log(token);
+
+    if (!token) {
+      console.log("no token");
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+
+    let decodedToken;
+    try {
+      decodedToken = jwt.verify(token, JWT_SECRET);
+      console.log('token success');
+    } catch (err) {
+      console.log('invalid token');
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+
+    const userId = decodedToken.userId;
+    console.log(userId);
+    const db = req.app.locals.db;
+    const user = await db.collection('user').findOne({ _id: new ObjectId(userId) });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const saves = user.saves || [];
+    if (saves.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    const listings = await db.collection('listing').find({ _id: { $in: saves.map(id => new ObjectId(id)) } }).toArray();
+
+    const savesDetails = listings.map(listing => ({
+      id: listing._id,
+      image: listing.images[0],
+      name: listing.name,
+      listingPrice: listing.listingPrice,
+      purchaseStatus: listing.purchaseStatus
+    }));
+
+    console.log(savesDetails);
+
+    res.status(200).json(savesDetails);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 exports.retrieveSales = async (req, res) => {
   try {
     const token = req.headers.authorization.split(' ')[1];
@@ -186,12 +241,14 @@ exports.retrieveSales = async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const purchases = user.listings || [];
-    if (purchases.length === 0) {
-      return res.status(200).json([]);
-    }
+    // const purchases = user.listings || [];
+    // if (purchases.length === 0) {
+    //   return res.status(200).json([]);
+    // }
 
-    const listings = await db.collection('listing').find({ _id: { $in: purchases.map(id => new ObjectId(id)) } }).toArray();
+    const listings = await db.collection('listing').find({ listingUserId: userId }).toArray();
+
+    //const listings = await db.collection('listing').find({ _id: { $in: purchases.map(id => new ObjectId(id)) } }).toArray();
 
     const purchaseDetails = listings
     .filter(listing => listing.purchaseStatus !== 'notPurchased')

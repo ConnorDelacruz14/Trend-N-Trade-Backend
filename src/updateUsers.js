@@ -32,7 +32,7 @@ async function updateUsers() {
             {
                 
                 $set: {
-                    listings: [] // Example array of ObjectId
+                    saves: [] // Example array of ObjectId
                 }
             }
         );

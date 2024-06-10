@@ -23,8 +23,10 @@ connectToDatabase().then(db => {
 // Routes
 const userRouter = require('./routes/userRoutes');
 const listingRouter = require('./routes/listingRoutes');
+const offerRouter = require('./routes/offerRoutes');
 
 app.use('/api/user', userRouter);
 app.use('/api/listing', listingRouter);
+app.use('/api/offer', offerRouter);
 
 module.exports = app;
