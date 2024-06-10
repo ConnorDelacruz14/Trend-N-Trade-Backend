@@ -54,7 +54,6 @@ exports.createUser = async (req, res) => {
       pfp: '', // Default empty profile picture
       tags: [], // Empty array for tags
       purchases: [], // Empty array for purchases
-      listings: [],
       saves: []
     };
     
@@ -141,6 +140,8 @@ exports.retrievePurchases = async (req, res) => {
     }
 
     const listings = await db.collection('listing').find({ _id: { $in: purchases.map(id => new ObjectId(id)) } }).toArray();
+
+    
 
     const purchaseDetails = listings.map(listing => ({
       id: listing._id,
