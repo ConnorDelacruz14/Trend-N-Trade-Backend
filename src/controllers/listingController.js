@@ -127,3 +127,74 @@ exports.updateListingStatus = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+exports.checkoutListing = async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    const { listingId } = req.body;
+
+    const token = req.headers.authorization.split(' ')[1];
+    //console.log(token);
+
+    if (!token) {
+      console.log("no token");
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+
+    let decodedToken;
+    try {
+      decodedToken = jwt.verify(token, JWT_SECRET);
+      console.log('token success');
+    } catch (err) {
+      console.log('invalid token');
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+
+    const userId = decodedToken.userId;
+
+    // Update listing purchase status
+    const updatedListing = await db.collection('listing').findOneAndUpdate(
+      { _id: new ObjectId(listingId) }, // Find listing by ID
+      { $set: { purchaseStatus: 'purchased' } }, // Update purchaseStatus field
+      { returnOriginal: false } // Return the updated document
+    );
+
+    // Add listingId to user's purchases array
+    const updatedUser = await db.collection('user').findOneAndUpdate(
+      { _id: new ObjectId(userId) }, // Find user by ID
+      { $push: { purchases: new ObjectId(listingId) } }, // Add listingId to purchases array
+      { returnOriginal: false } // Return the updated document
+    );
+
+    res.status(201).json({ message: 'Listing purchased successfully', ok: true });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+exports.getListingCheckout = async (req, res) => {
+  const { listingId } = req.body;
+
+  try {
+    // Fetch listing data from MongoDB
+    const db = req.app.locals.db;
+    const listingData = await db.collection('listing').findOne({ _id: new ObjectId(listingId) });
+
+    if (!listingData) {
+      return res.status(404).json({ error: 'Listing not found' });
+    }
+
+    // Extract necessary fields
+    const { images, name, listingPrice } = listingData; // Note: images is now correctly assigned
+
+    // Assuming images is an array and you want the first image
+    const firstImage = images && images.length > 0 ? images[0] : '';
+
+    res.status(200).json({ image: firstImage, name, listingPrice });
+  } catch (error) {
+    console.error('Error fetching listing data:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
