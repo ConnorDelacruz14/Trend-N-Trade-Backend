@@ -1,4 +1,8 @@
 const {ObjectId} = require("mongodb");
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+const JWT_SECRET = process.env.JWT_SECRET;
 
 exports.getListings = async (req, res) => {
   try {
@@ -10,13 +14,51 @@ exports.getListings = async (req, res) => {
   }
 };
 
+exports.getListing = async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    const listing = await db.collection('listing').findOne({_id: new ObjectId(req.body._id)})
+    res.json(listing);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
 
 exports.createListing = async (req, res) => {
+  const token = req.headers.authorization.split(' ')[1];
+  //console.log(token);
+
+  if (!token) {
+    console.log("no token");
+    return res.status(401).json({ error: 'No token provided' });
+  }
+
+
+  let decodedToken;
+  try {
+    decodedToken = jwt.verify(token, JWT_SECRET);
+    console.log('token success');
+  } catch (err) {
+    console.log('invalid token');
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+
+  const userId = decodedToken.userId;
+  console.log(userId);
+  const db = req.app.locals.db;
+  const user = await db.collection('user').findOne({ _id: new ObjectId(userId) });
+
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
   try {
     const db = req.app.locals.db;
     const newListing = req.body;
     
     newListing._id = new ObjectId();
+    newListing.listingUserId = userId;
 
     await db.collection('listing').insertOne(newListing);
     res.status(201).json({newListing, ok: true});
