@@ -225,7 +225,7 @@ exports.saveListing = async (req, res) => {
     const listingId = req.body._id
     db.collection('user').findOneAndUpdate(
         { _id: new ObjectId(userId) }, // Find listing by ID
-        { $set: { saves:  [listingId]} }, // Update purchaseStatus field
+        { $push: { saves: listingId} }, // Update purchaseStatus field
         { returnOriginal: false } // Return the updated document
     )
     res.json({ok: true});
