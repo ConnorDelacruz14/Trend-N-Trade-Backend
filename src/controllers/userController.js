@@ -221,46 +221,38 @@ exports.retrieveSaves = async (req, res) => {
 
 exports.retrieveSales = async (req, res) => {
   try {
-    const token = req.headers.authorization.split(' ')[1];
-    //console.log(token);
+    const authorizationHeader = req.headers.authorization;
+    if (!authorizationHeader) {
+      console.log("Authorization header is missing");
+      return res.status(401).json({ error: 'Authorization header is missing' });
+    }
 
+    const token = authorizationHeader.split(' ')[1];
     if (!token) {
-      console.log("no token");
+      console.log("No token provided");
       return res.status(401).json({ error: 'No token provided' });
     }
 
-
     let decodedToken;
     try {
-      decodedToken = jwt.verify(token, JWT_SECRET);
-      console.log('token success');
+      decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+      console.log('Token successfully decoded');
     } catch (err) {
-      console.log('invalid token');
+      console.log('Invalid token:', err.message);
       return res.status(401).json({ error: 'Invalid token' });
     }
 
-
     const userId = decodedToken.userId;
-    console.log(userId);
     const db = req.app.locals.db;
     const user = await db.collection('user').findOne({ _id: new ObjectId(userId) });
 
     if (!user) {
+      console.log('User not found');
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // const purchases = user.listings || [];
-    // if (purchases.length === 0) {
-    //   return res.status(200).json([]);
-    // }
-
     const listings = await db.collection('listing').find({ listingUserId: userId }).toArray();
-
-    //const listings = await db.collection('listing').find({ _id: { $in: purchases.map(id => new ObjectId(id)) } }).toArray();
-
-    const purchaseDetails = listings
-    //.filter(listing => listing.purchaseStatus !== 'notPurchased')
-    .map(listing => ({
+    const purchaseDetails = listings.map(listing => ({
       id: listing._id,
       image: listing.images[0],
       name: listing.name,
@@ -268,12 +260,10 @@ exports.retrieveSales = async (req, res) => {
       purchaseStatus: listing.purchaseStatus
     }));
 
-    console.log(purchaseDetails);
-    console.log('hi');
-
     res.status(200).json(purchaseDetails);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Server error:', err);
+    res.status(500).json({ error: 'Server error' });
   }
 };
 
