@@ -198,3 +198,38 @@ exports.getListingCheckout = async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
+
+exports.saveListing = async (req, res) => {
+  const token = req.headers.authorization.split(' ')[1];
+  //console.log(token);
+
+  if (!token) {
+    console.log("no token");
+    return res.status(401).json({ error: 'No token provided' });
+  }
+
+
+  let decodedToken;
+  try {
+    decodedToken = jwt.verify(token, JWT_SECRET);
+    console.log('token success');
+  } catch (err) {
+    console.log('invalid token');
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+
+  const userId = decodedToken.userId;
+
+  try {
+    const db = req.app.locals.db;
+    const listingId = req.body._id
+    db.collection('user').findOneAndUpdate(
+        { _id: new ObjectId(userId) }, // Find listing by ID
+        { $set: { saves:  [listingId]} }, // Update purchaseStatus field
+        { returnOriginal: false } // Return the updated document
+    )
+    res.json({ok: true});
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
