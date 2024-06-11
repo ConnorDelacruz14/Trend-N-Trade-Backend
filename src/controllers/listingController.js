@@ -56,6 +56,29 @@ exports.createListing = async (req, res) => {
   try {
     const db = req.app.locals.db;
     const newListing = req.body;
+
+    const token = req.headers.authorization.split(' ')[1];
+    //console.log(token);
+
+    if (!token) {
+      console.log("no token");
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+
+    let decodedToken;
+    try {
+      decodedToken = jwt.verify(token, JWT_SECRET);
+      console.log('token success');
+    } catch (err) {
+      console.log('invalid token');
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+
+    const userId = decodedToken.userId;
+
+    newListing.listingUserId = new ObjectId(userId);
     
     newListing._id = new ObjectId();
     newListing.listingUserId = userId;
