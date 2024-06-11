@@ -24,6 +24,18 @@ exports.getListing = async (req, res) => {
   }
 }
 
+exports.search = async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    const searchTerm = req.body.search;
+    console.log(req.body);
+    const listings = await db.collection('listing').find({ name: { $regex: searchTerm, $options: 'i' } }).toArray();
+    res.json(listings);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
 
 exports.createListing = async (req, res) => {
   const token = req.headers.authorization.split(' ')[1];
